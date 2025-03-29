@@ -40,13 +40,17 @@ class UserController extends Controller
             'jobid' => 'required|numeric|min:1|not_in:0',
         ];
 
-        $this->validate($request, $rules);
+        $validator = $this->validate($request, $rules);
+
+        if ($validator instanceof \Illuminate\Http\JsonResponse) {
+            return $validator; // Return validation errors directly
+        }
 
         // Validate if Jobid is found in the table tbluserjob
         try {
             UserJob::findOrFail($request->jobid);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->errorResponse('Invalid job ID provided.', Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->errorResponse('Invalid job ID provided.', Response::HTTP_UNPROCESSABLE_ENTITY, 1); 
         }
 
         $user = User::create($request->all()); // Include all fields from the request
@@ -58,7 +62,7 @@ class UserController extends Controller
         $user = User::find($id);
 
         if (!$user) {
-            return $this->errorResponse('User ID does not exist', Response::HTTP_NOT_FOUND);
+            return $this->errorResponse('User ID does not exist', Response::HTTP_NOT_FOUND, 1);
         }
 
         return $this->successResponse($user);
@@ -73,13 +77,17 @@ class UserController extends Controller
             'jobid' => 'required|numeric|min:1|not_in:0',
         ];
 
-        $this->validate($request, $rules);
+        $validator = $this->validate($request, $rules);
+
+        if ($validator instanceof \Illuminate\Http\JsonResponse) {
+            return $validator; // Return validation errors directly
+        }
 
         // Validate if Jobid is found in the table tbluserjob
         try {
             UserJob::findOrFail($request->jobid);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->errorResponse('Invalid job ID provided.', Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->errorResponse('Invalid job ID provided.', Response::HTTP_UNPROCESSABLE_ENTITY, 1); 
         }
 
         $user = User::findOrFail($id);
@@ -88,7 +96,7 @@ class UserController extends Controller
 
         // if no changes happen
         if ($user->isClean()) {
-            return $this->errorResponse('At least one value must change', Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->errorResponse('At least one value must change', Response::HTTP_UNPROCESSABLE_ENTITY, 1);
         }
 
         $user->save();
@@ -101,7 +109,7 @@ class UserController extends Controller
         $user = User::find($id);
 
         if (!$user) {
-            return $this->errorResponse('User ID does not exist', Response::HTTP_NOT_FOUND);
+            return $this->errorResponse('User ID does not exist', Response::HTTP_NOT_FOUND, 1);
         }
 
         $user->delete();
