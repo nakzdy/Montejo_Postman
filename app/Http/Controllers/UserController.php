@@ -50,25 +50,13 @@ class UserController extends Controller
         try {
             UserJob::findOrFail($request->jobid);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->errorResponse('Invalid job ID provided.', Response::HTTP_UNPROCESSABLE_ENTITY, 1); 
+            return $this->errorResponse('Does not exist any instance of userjob with the given id', Response::HTTP_NOT_FOUND, 1);
         }
 
         $user = User::create($request->all()); // Include all fields from the request
         return $this->successResponse($user, Response::HTTP_CREATED);
     }
 
-    /*Show details of a single user*/
-    public function show($id){
-        $user = User::find($id);
-
-        if (!$user) {
-            return $this->errorResponse('User ID does not exist', Response::HTTP_NOT_FOUND, 1);
-        }
-
-        return $this->successResponse($user);
-    }
-
-    /*Update an existing user*/
     public function update(Request $request, $id){
         $rules = [
             'username' => 'max:20',
@@ -87,7 +75,7 @@ class UserController extends Controller
         try {
             UserJob::findOrFail($request->jobid);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return $this->errorResponse('Invalid job ID provided.', Response::HTTP_UNPROCESSABLE_ENTITY, 1); 
+            return $this->errorResponse('Does not exist any instance of userjob with the given id', Response::HTTP_NOT_FOUND, 1);
         }
 
         $user = User::findOrFail($id);
@@ -101,18 +89,5 @@ class UserController extends Controller
 
         $user->save();
         return $this->successResponse($user);
-    }
-
-    /* Delete a user */
-    public function delete($id)
-    {
-        $user = User::find($id);
-
-        if (!$user) {
-            return $this->errorResponse('User ID does not exist', Response::HTTP_NOT_FOUND, 1);
-        }
-
-        $user->delete();
-        return $this->successResponse(['message' => 'User deleted successfully']);
     }
 }
