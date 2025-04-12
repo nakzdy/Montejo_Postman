@@ -1,35 +1,41 @@
-FROM php:8.1-fpm-alpine
+# Use the official PHP image with Apache
+FROM php:8.1-apache
 
-# Install system dependencies
-RUN apk update && apk add --no-cache --virtual .build-deps \
-    git \
-    curl \
-    libzip-dev \
-    unzip
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql zip bcmath
+# Install system dependencies and PHP extensions
+RUN apt-get update && apt-get install -y \
+    libzip-dev zip unzip curl git \
+    && docker-php-ext-install pdo pdo_mysql zip
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application files
+# Copy project files to the container
 COPY . .
 
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# If .env doesn't exist, copy from example (required for composer scripts)
+RUN cp .env.example .env || true
+
+# Avoid Composer asking questions or failing as root
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Generate application key
-RUN php artisan key:generate --ansi
+# Set correct permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
 
-# Set storage directory permissions
-RUN chmod -R 755 storage bootstrap/cache
+# Set Apache document root to the Lumen public directory
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 
-# Expose port (if needed for direct access, but likely handled by a web server)
-# EXPOSE 9000
+# Update Apache config to use the new document root
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 
-# Command to run PHP-FPM
-CMD ["php-fpm"]
+# Expose port 80
+EXPOSE 80
